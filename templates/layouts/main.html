@@ -1,0 +1,37 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'main/css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'main/bootsrtap-icons/font/bootsrtap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'main/bootsrtap/css/bootsrtap.min.css' %}">
+    
+    {% block extra_css %}
+
+    {% endblock %}
+</head>
+<body>
+
+    {% include 'layouts/navbar.html' %}
+
+    <div class="container">
+        {% block content %}
+
+        {% endblock %}
+    </div>
+    
+    {% include 'layouts/navbar.html' %}
+
+    {% block extra_js %}
+
+    {% endblock %}
+
+    <script src="{% static 'main/js/main.js' %}"></script>
+    <script src="{% static 'main/bootsrtap/js/bootsrtap.bundle.js' %}"></script>
+
+</body>
+</html>
