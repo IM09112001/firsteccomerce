@@ -1,8 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 import json
 import datetime
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth import login, authenticate, logout
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import *
 from .utils import cookieCart, cartData, guestOrder
@@ -13,10 +16,25 @@ class StoreListView(TemplateView):
 
 def store(request):
     data = cartData(request)
-
-    cartItems = data['cartItems']          
-
     products = Product.objects.all()
+
+    items_per_page = request.GET.get('page_count') if request.GET.get('page_count') else 1
+    paginator = Paginator(products, items_per_page)
+
+    page = request.GET.get('page')
+
+    try:
+        # Get the corresponding page from the paginator
+        products = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver the first page.
+        products = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver the last page of results.
+        products = paginator.page(paginator.num_pages)
+
+    cartItems = data['cartItems']       
+
     context = {
         'products':products,
         'cartItems': cartItems
@@ -42,6 +60,18 @@ def checkout(request):
 
     context = {'items':items, 'order':order, 'cartItems': cartItems}
     return render(request, 'checkout.html', context)
+
+def product_info(request, product_id):
+    data = cartData(request)
+
+    cartItems = data['cartItems']
+
+    product = get_object_or_404(Product, id=product_id)
+    context = {'cartItems': cartItems,'product': product}
+    return render(request, 'product_info.html', context)
+
+def error_404(request, exception):
+    return render(request, '404.html', status=404)
 
 def updateItem(request):
     data = json.loads(request.body)
@@ -103,3 +133,32 @@ def proccessOrder(request):
     order.save()
 
     return JsonResponse('Payment submitted...', safe=False)
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user:
+                login(request, user)
+                return redirect('store:store') 
+    else:
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
+
+def sign_up(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('store:store') 
+    else:
+        form = UserCreationForm()
+    return render(request, 'sign_up.html', {'form': form})
+
+def sign_out(request):
+    logout(request)
+    return redirect('store:store') 

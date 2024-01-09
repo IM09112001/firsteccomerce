@@ -5,6 +5,7 @@ class Customer(models.Model):
     user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=200, null=True)
     email = models.EmailField(max_length=200, null=True)
+    # profile_img = models.ImageField(verbose_name=)
 
     def __str__(self):
         return self.name
@@ -25,6 +26,12 @@ class Product(models.Model):
         except:
             url = ''
         return url
+    
+    def get_quantity(self):
+        # Retrieve the total quantity of the product across all orders
+        order_items = OrderItem.objects.filter(product=self)
+        total_quantity = sum([item.quantity for item in order_items])
+        return total_quantity
     
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
